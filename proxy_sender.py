@@ -11,8 +11,8 @@ LAST_MSG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "last_m
 
 urllib3.disable_warnings()
 
-TELEGRAM_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "8943253858:AAFAHf0yh5p2SvhaiZFb0q8jCRi8LIOxRXY")
-TELEGRAM_CHAT_ID = os.environ.get("TG_CHAT_ID", "1017061793")
+TELEGRAM_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "8943253858:AAFAHf0yh5p2SvhaiZFb0q8jCRi8LIOxRXY").strip()
+TELEGRAM_CHAT_ID = os.environ.get("TG_CHAT_ID", "1017061793").strip()
 
 PROXY_SOURCES = [
     "https://raw.githubusercontent.com/kort0881/telegram-proxy-collector/main/proxy_all.txt",
@@ -152,12 +152,14 @@ def send_to_telegram(proxies):
     message += "\nНажмите для подключения в Telegram."
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    print(f"Отправка в чат {TELEGRAM_CHAT_ID}, токен: ...{TELEGRAM_BOT_TOKEN[-10:]}")
     resp = requests.post(url, json={
         "chat_id": TELEGRAM_CHAT_ID,
         "text": message,
         "disable_web_page_preview": True,
     }, timeout=10)
 
+    print(f"Ответ Telegram: status={resp.status_code}, body={resp.text[:200]}")
     if resp.status_code == 200:
         msg_id = resp.json()["result"]["message_id"]
         save_last_msg_id(msg_id)
