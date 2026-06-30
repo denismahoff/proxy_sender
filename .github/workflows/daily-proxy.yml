@@ -10,12 +10,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          clean: true
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - run: pip install -r requirements.txt
+
+      - name: Debug env
+        run: |
+          echo "TOKEN_LEN=${#TG_BOT_TOKEN}"
+          echo "CHAT_ID=[$TG_CHAT_ID]"
+          curl -s "https://api.telegram.org/bot${TG_BOT_TOKEN}/getMe" || true
 
       - run: python proxy_sender.py
         env:
