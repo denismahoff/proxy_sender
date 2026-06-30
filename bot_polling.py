@@ -114,7 +114,7 @@ def send_message(chat_id, text):
 
 
 def handle_proxy_command(chat_id):
-    send_message(chat_id, "Ищу свежие прокси, подождите...")
+    send_message(chat_id, "Ищу свежие прокси, это займёт до 5 минут...")
 
     all_proxies = fetch_proxies()
     if not all_proxies:
@@ -154,8 +154,8 @@ def poll_once():
         if not chat_id:
             continue
 
-        if text == "/start":
-            send_message(chat_id, "Отправьте /proxy чтобы получить свежие MTProto прокси.")
+                if text == "/start":
+                    send_message(chat_id, "Доступные команды:\n\n/proxy — получить список из 5 свежих MTProto прокси (РФ)\n\nОтвет приходит в течение 5 минут.")
         elif text == "/proxy":
             handle_proxy_command(chat_id)
 
