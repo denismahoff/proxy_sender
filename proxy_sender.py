@@ -1,4 +1,5 @@
 import os
+import json as json_lib
 import random
 import socket
 import urllib.parse
@@ -11,8 +12,8 @@ LAST_MSG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "last_m
 
 urllib3.disable_warnings()
 
-TELEGRAM_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "8943253858:AAFAHf0yh5p2SvhaiZFb0q8jCRi8LIOxRXY").strip()
-TELEGRAM_CHAT_ID = os.environ.get("TG_CHAT_ID", "1017061793").strip()
+TELEGRAM_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "").strip() or "8943253858:AAFAHf0yh5p2SvhaiZFb0q8jCRi8LIOxRXY"
+TELEGRAM_CHAT_ID = os.environ.get("TG_CHAT_ID", "").strip() or "1017061793"
 
 PROXY_SOURCES = [
     "https://raw.githubusercontent.com/kort0881/telegram-proxy-collector/main/proxy_all.txt",
@@ -126,10 +127,10 @@ def delete_old_message():
         return
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/deleteMessage"
-    resp = requests.post(url, json={
+    resp = requests.post(url, data=json_lib.dumps({
         "chat_id": TELEGRAM_CHAT_ID,
         "message_id": msg_id,
-    }, timeout=10)
+    }), headers={"Content-Type": "application/json"}, timeout=10)
 
     if resp.status_code == 200 and resp.json().get("ok"):
         print(f"Удалено старое сообщение {msg_id}")
@@ -144,7 +145,7 @@ def send_to_telegram(proxies):
 
     delete_old_message()
 
-    selected = random.sample(proxies, min(3, len(proxies)))
+    selected = random.sample(proxies, min(5, len(proxies)))
 
     message = "Свежие MTProto прокси (РФ):\n\n"
     for i, proxy in enumerate(selected, 1):
@@ -153,11 +154,11 @@ def send_to_telegram(proxies):
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     print(f"Отправка в чат {TELEGRAM_CHAT_ID}, токен: ...{TELEGRAM_BOT_TOKEN[-10:]}")
-    resp = requests.post(url, json={
+    resp = requests.post(url, data=json_lib.dumps({
         "chat_id": TELEGRAM_CHAT_ID,
         "text": message,
         "disable_web_page_preview": True,
-    }, timeout=10)
+    }), headers={"Content-Type": "application/json"}, timeout=10)
 
     print(f"Ответ Telegram: status={resp.status_code}, body={resp.text[:200]}")
     if resp.status_code == 200:
