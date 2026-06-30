@@ -1,0 +1,5 @@
+__pycache__/
+.idea/
+venv/
+*.pyc
+last_msg_id.txt
