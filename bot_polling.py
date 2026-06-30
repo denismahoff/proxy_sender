@@ -1,7 +1,7 @@
 import json as json_lib
+import os
 import random
 import socket
-import time
 import urllib.parse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -10,7 +10,8 @@ import urllib3
 
 urllib3.disable_warnings()
 
-BOT_TOKEN = "8943253858:AAFAHf0yh5p2SvhaiZFb0q8jCRi8LIOxRXY"
+BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "").strip() or "8943253858:AAFAHf0yh5p2SvhaiZFb0q8jCRi8LIOxRXY"
+OFFSET_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bot_offset.txt")
 
 PROXY_SOURCES = [
     "https://raw.githubusercontent.com/kort0881/telegram-proxy-collector/main/proxy_all.txt",
@@ -18,6 +19,19 @@ PROXY_SOURCES = [
 ]
 
 PING_TIMEOUT = 3
+
+
+def load_offset():
+    try:
+        with open(OFFSET_FILE, "r") as f:
+            return int(f.read().strip())
+    except (FileNotFoundError, ValueError):
+        return 0
+
+
+def save_offset(offset):
+    with open(OFFSET_FILE, "w") as f:
+        f.write(str(offset))
 
 
 def fetch_proxies():
@@ -120,40 +134,34 @@ def handle_proxy_command(chat_id):
     send_message(chat_id, message)
 
 
-def main():
-    print("Бот запущен. Ожидаю команды /proxy ...")
-    offset = 0
+def poll_once():
+    offset = load_offset()
 
-    while True:
-        try:
-            resp = requests.get(
-                f"https://api.telegram.org/bot{BOT_TOKEN}/getUpdates",
-                params={"offset": offset, "timeout": 30},
-                timeout=35,
-            )
-            data = resp.json()
+    resp = requests.get(
+        f"https://api.telegram.org/bot{BOT_TOKEN}/getUpdates",
+        params={"offset": offset, "timeout": 2},
+        timeout=10,
+    )
+    data = resp.json()
 
-            for update in data.get("result", []):
-                offset = update["update_id"] + 1
-                message = update.get("message", {})
-                text = message.get("text", "")
-                chat_id = message.get("chat", {}).get("id")
+    new_offset = offset
+    for update in data.get("result", []):
+        new_offset = update["update_id"] + 1
+        message = update.get("message", {})
+        text = message.get("text", "")
+        chat_id = message.get("chat", {}).get("id")
 
-                if not chat_id:
-                    continue
+        if not chat_id:
+            continue
 
-                if text == "/start":
-                    send_message(chat_id, "Отправьте /proxy чтобы получить свежие MTProto прокси.")
-                elif text == "/proxy":
-                    handle_proxy_command(chat_id)
+        if text == "/start":
+            send_message(chat_id, "Отправьте /proxy чтобы получить свежие MTProto прокси.")
+        elif text == "/proxy":
+            handle_proxy_command(chat_id)
 
-        except KeyboardInterrupt:
-            print("Бот остановлен")
-            break
-        except Exception as e:
-            print(f"Ошибка: {e}")
-            time.sleep(5)
+    save_offset(new_offset)
+    print(f"Обработано. Offset: {offset} -> {new_offset}")
 
 
 if __name__ == "__main__":
-    main()
+    poll_once()
